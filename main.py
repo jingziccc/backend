@@ -1,4 +1,6 @@
-from fastapi import FastAPI, File, UploadFile, Form,HTTPException
+import subprocess
+
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from typing import Union
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -125,3 +127,13 @@ async def md5(md5: str):
         return {"info": "The file exists."}
     else:
         raise HTTPException(status_code=404, detail="File not found.")
+
+
+@app.get("/predict/all")
+async def predict_all():
+    subprocess.Popen('python ./algorithm/pre.py ' + './uploaded_files/测试发动机2发动机_李峰-1_-CMAPSS_DS01-005h5',
+                     shell=True)
+    subprocess.Popen(
+        'python ./algorithm/data_deal.py ' + './uploaded_files/测试发动机2发动机_李峰-1_-CMAPSS_DS01-005h5',
+        shell=True)
+    return {"info": "Predict all files."}
