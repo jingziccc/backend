@@ -1,6 +1,6 @@
 import subprocess
 
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException,status,Depends
 from typing import Union
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -8,7 +8,11 @@ import shutil
 import hashlib
 import os
 from pathlib import Path
+from databases import Database
 
+
+DATABASE_URL = "mysql://tzb:6zinnjSCChXFH647@111.229.169.56:3306/tzb"
+database = Database(DATABASE_URL)
 uploaded_files_md5s = {}
 
 
@@ -33,6 +37,16 @@ def calculate_md5(fname):
         for chunk in iter(lambda: f.read(4096), b''):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+
+@app.on_event("startup")
+async def startup():
+    await database.connect()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
 
 
 def get_files_md5(directory: str):
@@ -73,6 +87,33 @@ def parse_uploaded_files(directory: str):
             else:
                 print(f"File {file.name} does not match the expected pattern.")
     return parsed_files
+
+
+@app.get("/modelMsg")
+async def model_msg():
+    return {
+        "0001": {
+            "模型风格": "model1",
+            "模型类型": "ResNet50",
+            "算法名称": 0.9,
+            "训练情况": 0.8,
+            "创建时间": 2024 - 12 - 12,
+        },
+        "0002": {
+            "模型风格": "model2",
+            "模型类型": "Transformer",
+            "算法名称": 0.9,
+            "训练情况": 0.8,
+            "创建时间": 2024 - 12 - 12,
+        },
+        "0003": {
+            "模型风格": "model3",
+            "模型类型": "TimeGPT",
+            "算法名称": 0.9,
+            "训练情况": 0.8,
+            "创建时间": 2024 - 12 - 12,
+        }
+    }
 
 
 @app.post("/predict")
@@ -131,9 +172,19 @@ async def md5(md5: str):
 
 @app.get("/predict/all")
 async def predict_all():
-    subprocess.Popen('python ./algorithm/pre.py ' + './uploaded_files/测试发动机2发动机_李峰-1_-CMAPSS_DS01-005h5',
-                     shell=True)
-    subprocess.Popen(
-        'python ./algorithm/data_deal.py ' + './uploaded_files/测试发动机2发动机_李峰-1_-CMAPSS_DS01-005h5',
-        shell=True)
+    # subprocess.Popen('python ./algorithm/pre.py ' + './uploaded_files/测试机_发动机2_发动机_李峰_-1_N-CMAPSS_DS08c-008.h5',
+    #                  shell=True)
+    # subprocess.Popen(
+    #     'python ./algorithm/data_deal.py ' + './uploaded_files/测试机_发动机2_发动机_李峰_-1_N-CMAPSS_DS08c-008.h5',
+    #     shell=True)
     return {"info": "Predict all files."}
+
+
+@app.put("/register")
+async def register(name: str, password: str, phone: str):
+
+    await database.execute(
+        query="INSERT INTO user (name, password, phone) VALUES (:name, :password, :phone)",
+        values={"name": name, "password": password, "phone": phone}
+    )
+    return {"info": "Register successfully."}
