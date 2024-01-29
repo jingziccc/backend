@@ -9,7 +9,7 @@ import hashlib
 import os
 from pathlib import Path
 from databases import Database
-
+from subprocess import CompletedProcess
 
 DATABASE_URL = "mysql://tzb:6zinnjSCChXFH647@111.229.169.56:3306/tzb"
 database = Database(DATABASE_URL)
@@ -121,7 +121,7 @@ async def predict(item: Item):
     return {"data": item.data + " accept"}
 
 
-@app.post("/upload/")
+@app.post("/upload/", tags=["数据中心"])
 async def upload_file(
         file: UploadFile = File(...),
         machine_name: str = Form(...),
@@ -129,6 +129,11 @@ async def upload_file(
         component_type: str = Form(...),
         owner: str = Form(...)
 ):
+    # 判断目录存在
+    path = Path("./uploaded_files")
+    if not path.is_dir():
+        path.mkdir()
+    # 保存文件
     file_location = f"./uploaded_files/{machine_name}_{component_name}_{component_type}_{owner}_-1_{file.filename}"
     with open(file_location, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -145,13 +150,13 @@ async def upload_file(
     }
 
 
-@app.get("/dataMsg")
+@app.get("/dataMsg", tags=["数据中心"])
 async def data_msg():
     parsed_files = parse_uploaded_files("./uploaded_files")
     return parsed_files
 
 
-@app.get("/md5s")
+@app.get("/md5s", tags=["md5"])
 async def md5s():
     global uploaded_files_md5s
     if not bool(uploaded_files_md5s):
@@ -159,7 +164,7 @@ async def md5s():
     return uploaded_files_md5s
 
 
-@app.get("/md5/{md5}")
+@app.get("/md5/{md5}", tags=["md5"])
 async def md5(md5: str):
     global uploaded_files_md5s
     if not bool(uploaded_files_md5s):
@@ -170,17 +175,23 @@ async def md5(md5: str):
         raise HTTPException(status_code=404, detail="File not found.")
 
 
-@app.get("/predict/all")
+@app.get("/predict/all", tags=["数据中心"])
 async def predict_all():
-    # subprocess.Popen('python ./algorithm/pre.py ' + './uploaded_files/测试机_发动机2_发动机_李峰_-1_N-CMAPSS_DS08c-008.h5',
-    #                  shell=True)
-    # subprocess.Popen(
-    #     'python ./algorithm/data_deal.py ' + './uploaded_files/测试机_发动机2_发动机_李峰_-1_N-CMAPSS_DS08c-008.h5',
-    #     shell=True)
-    return {"info": "Predict all files."}
+    # 遍历uoloaded_files目录下的所有xlsx文件
+    for file in Path("./uploaded_files").iterdir():
+        if file.is_file() and file.suffix == ".xlsx":
+            # 调用预测脚本
+            command = ["python", "./algorithm/exc2npy.py", "./uploaded_files/"+file.name]
+            # 执行命令
+            result: CompletedProcess = subprocess.run(command, capture_output=True, text=True)
+            if result.returncode == 0:
+                print(result.stdout)
+            else:
+                return HTTPException(status_code=500, detail=result.stderr)
+    return {"info": "Predicted all files."}
 
 
-@app.put("/register")
+@app.put("/register", tags=["用户中心"])
 async def register(name: str, password: str, phone: str):
 
     await database.execute(
@@ -188,3 +199,7 @@ async def register(name: str, password: str, phone: str):
         values={"name": name, "password": password, "phone": phone}
     )
     return {"info": "Register successfully."}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app="main:app", host="localhost", port=8000, reload=True)

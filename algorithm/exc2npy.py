@@ -4,8 +4,20 @@ import torchvision
 from torch import nn
 import copy
 import numpy as np
+import sys
+import os
 
-df = load_workbook(r'D:\E\course\aa.xlsx')
+if len(sys.argv) < 2:
+    print("Usage: python exc2npy.py <excelfile>")
+    sys.exit(1)
+# 第一个参数是脚本名称,第二个参数是文件名
+excel_file = sys.argv[1]
+# 分隔文件名和扩展名
+file_name, ext = os.path.splitext(excel_file)
+print(file_name, ext)
+
+
+df = load_workbook(excel_file)
 sheet=df.active
 a=[]
 for i in sheet.iter_rows():
@@ -30,7 +42,7 @@ def test(tbt,model):
         outputs=model(images)
         _,predicted=torch.max(outputs.data,1)
         print(predicted)
-model = torch.load(r'D:\E\course\dc\23\M11\model_resnet_1.pt')#加载模型
+model = torch.load(r'./model/model_resnet_1.pt')#加载模型
 test(tbt,model)
 
 
