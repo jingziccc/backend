@@ -1,6 +1,6 @@
 import subprocess
 
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException,status,Depends
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status, Depends
 from typing import Union
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -24,6 +24,7 @@ class Item(BaseModel):
 class PieData(BaseModel):
     value: float
     name: str
+
 
 app = FastAPI()
 
@@ -76,7 +77,7 @@ def parse_uploaded_files(directory: str):
     for file in path.iterdir():
         if file.is_file():
             # 分解文件名，这里假设文件名的格式严格遵循给定的模式
-            # 即：machine_name_component_name_component_type_owner_filename
+            # 即：machine_name_component_name_component_type_owner_life_filename
             parts = file.stem.split("_")  # 使用 stem 获取不带扩展名的文件名部分
             if len(parts) >= 5:  # 确保文件名包含足够的部分
                 # 将解析的部分组装成一个字典
@@ -86,12 +87,25 @@ def parse_uploaded_files(directory: str):
                     "component_type": parts[2],
                     "owner": parts[3],
                     "life": int(parts[4]),
-                    "filename": "_".join(parts[5:]) + file.suffix  # 处理文件名中可能包含的额外下划线
+                    # 处理文件名中可能包含的额外下划线
+                    "filename": "_".join(parts[5:]) + file.suffix
                 }
                 parsed_files.append(file_info)
             else:
                 print(f"File {file.name} does not match the expected pattern.")
     return parsed_files
+
+
+# 按照machine_name_component_name_component_type_owner_life_filename的格式重新命名文件
+def rename_file(file: Path, new_life: int):
+    # 分割父级目录和文件名
+    parent, filename = os.path.split(file)
+    # 重命名文件
+    new_filename = f"{file.stem.split('_')[0]}_{file.stem.split('_')[1]}_{file.stem.split(
+        '_')[2]}_{file.stem.split('_')[3]}_{new_life}_{file.stem.split('_')[-1]}{file.suffix}"
+    new_file = os.path.join(parent, new_filename)
+    print(f"Renaming {file} to {new_file}")
+    os.rename(file, new_file)
 
 
 @app.get("/modelMsg")
@@ -139,7 +153,8 @@ async def upload_file(
     if not path.is_dir():
         path.mkdir()
     # 保存文件
-    file_location = f"./uploaded_files/{machine_name}_{component_name}_{component_type}_{owner}_-1_{file.filename}"
+    file_location = f"./uploaded_files/{machine_name}_{
+        component_name}_{component_type}_{owner}_-1_{file.filename}"
     with open(file_location, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     # 计算md5
@@ -183,22 +198,30 @@ async def md5(md5: str):
 @app.get("/predict/all", tags=["数据中心"])
 async def predict_all():
     # 遍历uoloaded_files目录下的所有xlsx文件
+    result: CompletedProcess
     for file in Path("./uploaded_files").iterdir():
         if file.is_file() and file.suffix == ".xlsx":
-            # 调用预测脚本
-            command = ["python", "./algorithm/exc2npy.py", "./uploaded_files/"+file.name]
+            # 如果寿命不为-1，则执行命令
+            parts = file.stem.split("_")
+            if parts[4] != "-1":
+                continue
+            command = ["python", "./algorithm/random_life.py",
+                       "./uploaded_files/" + file.name]
             # 执行命令
-            result: CompletedProcess = subprocess.run(command, capture_output=True, text=True)
+            result = subprocess.run(command, capture_output=True, text=True)
             if result.returncode == 0:
                 print(result.stdout)
+                life = int(result.stdout)
+                # 重命名文件
+                # 解除占用
+                rename_file(file, life)
             else:
                 return HTTPException(status_code=500, detail=result.stderr)
-    return {"info": "Predicted all files."}
+    return {"info": "Predicted all files.", "result": "success"}
 
 
 @app.put("/register", tags=["用户中心"])
 async def register(name: str, password: str, phone: str):
-
     await database.execute(
         query="INSERT INTO user (name, password, phone) VALUES (:name, :password, :phone)",
         values={"name": name, "password": password, "phone": phone}
@@ -230,4 +253,5 @@ async def read_pie1_data():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app="main:app", host="localhost", port=8000, reload=True)
