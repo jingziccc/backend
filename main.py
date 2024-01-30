@@ -14,7 +14,6 @@ from subprocess import CompletedProcess
 DATABASE_URL = "mysql://tzb:6zinnjSCChXFH647@111.229.169.56:3306/tzb"
 database = Database(DATABASE_URL)
 uploaded_files_md5s = {}
-result: CompletedProcess
 
 
 class Item(BaseModel):
@@ -190,9 +189,13 @@ async def md5(md5: str):
 @app.get("/predict/all", tags=["数据中心"])
 async def predict_all():
     # 遍历uoloaded_files目录下的所有xlsx文件
-    global result
+    result: CompletedProcess
     for file in Path("./uploaded_files").iterdir():
         if file.is_file() and file.suffix == ".xlsx":
+            # 如果寿命不为-1，则执行命令
+            parts = file.stem.split("_")
+            if parts[4] != "-1":
+                continue
             command = ["python", "./algorithm/random_life.py", "./uploaded_files/" + file.name]
             # 执行命令
             result = subprocess.run(command, capture_output=True, text=True)
@@ -204,9 +207,7 @@ async def predict_all():
                 rename_file(file, life)
             else:
                 return HTTPException(status_code=500, detail=result.stderr)
-    return {"info": "Predicted all files.", "result": result.stdout}
-
-
+    return {"info": "Predicted all files.", "result": "success"}
 @app.put("/register", tags=["用户中心"])
 async def register(name: str, password: str, phone: str):
     await database.execute(
