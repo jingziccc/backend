@@ -4,6 +4,7 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException,status,Depend
 from typing import Union
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import json
 import shutil
 import hashlib
 import os
@@ -19,6 +20,10 @@ uploaded_files_md5s = {}
 class Item(BaseModel):
     data: str
 
+
+class PieData(BaseModel):
+    value: float
+    name: str
 
 app = FastAPI()
 
@@ -199,6 +204,29 @@ async def register(name: str, password: str, phone: str):
         values={"name": name, "password": password, "phone": phone}
     )
     return {"info": "Register successfully."}
+
+
+@app.get("/OverviewData")
+async def read_chart_data():
+    with open("myChart_data.txt", "r") as file:
+        data = json.load(file)
+        print(data)
+    return data
+
+
+@app.get("/OverviewData/pie1_data.txt")
+async def read_pie1_data():
+    with open("OverviewData/pie1_data.txt", "r") as file:
+        data = json.load(file)
+        return [PieData(**item) for item in data]
+
+
+@app.get("/OverviewData/pie2_data.txt")
+async def read_pie1_data():
+    with open("OverviewData/pie2_data.txt", "r") as file:
+        data = json.load(file)
+        return [PieData(**item) for item in data]
+
 
 if __name__ == "__main__":
     import uvicorn
