@@ -1,19 +1,23 @@
 import subprocess
-
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status, Depends
 from typing import Union
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import json
-import shutil
+
 import hashlib
 import os
 from pathlib import Path
-from databases import Database
 from subprocess import CompletedProcess
+from tortoise.contrib.fastapi import register_tortoise
+from database.config import CONFIG
 
-DATABASE_URL = "mysql://tzb:6zinnjSCChXFH647@111.229.169.56:3306/tzb"
-database = Database(DATABASE_URL)
+from database.models import User
+from tools.security import get_current_user
+
+
+from api.user import userAPI
+
 uploaded_files_md5s = {}
 
 
@@ -27,7 +31,11 @@ class PieData(BaseModel):
 
 
 app = FastAPI()
-
+register_tortoise(app=app,
+                  config=CONFIG,
+                  generate_schemas=True,  # 是否自动生成表结构
+                  )
+app.include_router(userAPI, prefix="/user", tags=["user related API"])
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,14 +53,6 @@ def calculate_md5(fname):
     return hash_md5.hexdigest()
 
 
-@app.on_event("startup")
-async def startup():
-    await database.connect()
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
 
 
 def get_files_md5(directory: str):
@@ -97,16 +97,20 @@ def parse_uploaded_files(directory: str):
 
 
 # 按照machine_name_component_name_component_type_owner_life_filename的格式重新命名文件
-def rename_file(file: Path, new_life: int):
-    # 分割父级目录和文件名
-    parent, filename = os.path.split(file)
-    # 重命名文件
-    new_filename = f"{file.stem.split('_')[0]}_{file.stem.split('_')[1]}_{file.stem.split(
-        '_')[2]}_{file.stem.split('_')[3]}_{new_life}_{file.stem.split('_')[-1]}{file.suffix}"
-    new_file = os.path.join(parent, new_filename)
-    print(f"Renaming {file} to {new_file}")
-    os.rename(file, new_file)
+# def rename_file(file: Path, new_life: int):
+#     # 分割父级目录和文件名
+#     parent, filename = os.path.split(file)
+#     # 重命名文件
+#     new_filename = f"{file.stem.split('_')[0]}_{file.stem.split('_')[1]}_{file.stem.split(
+#         '_')[2]}_{file.stem.split('_')[3]}_{new_life}_{file.stem.split('_')[-1]}{file.suffix}"
+#     new_file = os.path.join(parent, new_filename)
+#     print(f"Renaming {file} to {new_file}")
+#     os.rename(file, new_file)
 
+
+@app.get("/current_user")
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    return current_user
 
 @app.get("/modelMsg")
 async def model_msg():
@@ -138,36 +142,6 @@ async def model_msg():
 @app.post("/predict")
 async def predict(item: Item):
     return {"data": item.data + " accept"}
-
-
-@app.post("/upload/", tags=["数据中心"])
-async def upload_file(
-        file: UploadFile = File(...),
-        machine_name: str = Form(...),
-        component_name: str = Form(...),
-        component_type: str = Form(...),
-        owner: str = Form(...)
-):
-    # 判断目录存在
-    path = Path("./uploaded_files")
-    if not path.is_dir():
-        path.mkdir()
-    # 保存文件
-    file_location = f"./uploaded_files/{machine_name}_{
-        component_name}_{component_type}_{owner}_-1_{file.filename}"
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    # 计算md5
-    uploaded_files_md5s[file.filename] = calculate_md5(file_location)
-    return {
-        "filename": file.filename,
-        "machine_name": machine_name,
-        "component_name": component_name,
-        "component_type": component_type,
-        "owner": owner,
-        "life": -1,
-        "info": "File saved successfully."
-    }
 
 
 @app.get("/dataMsg", tags=["数据中心"])
@@ -214,19 +188,12 @@ async def predict_all():
                 life = int(result.stdout)
                 # 重命名文件
                 # 解除占用
-                rename_file(file, life)
+                # rename_file(file, life)
             else:
                 return HTTPException(status_code=500, detail=result.stderr)
     return {"info": "Predicted all files.", "result": "success"}
 
 
-@app.put("/register", tags=["用户中心"])
-async def register(name: str, password: str, phone: str):
-    await database.execute(
-        query="INSERT INTO user (name, password, phone) VALUES (:name, :password, :phone)",
-        values={"name": name, "password": password, "phone": phone}
-    )
-    return {"info": "Register successfully."}
 
 
 @app.get("/OverviewData")
@@ -253,5 +220,4 @@ async def read_pie1_data():
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app="main:app", host="localhost", port=8000, reload=True)
