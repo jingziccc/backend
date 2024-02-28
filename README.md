@@ -1,8 +1,3 @@
-> pip install fastapi
-> pip install "uvicorn[standard]”
-> 
-> uvicorn main:app --reload
->
 # backend
 
 ## 配置开发环境
@@ -24,3 +19,6 @@
 
 ### 查看swagger
 > http://127.0.0.1:8000/docs
+>
+### 启动服务
+> uvicorn main:app --reload
