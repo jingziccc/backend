@@ -5,7 +5,12 @@
 + pip install fastapi
 + pip install "uvicorn[standard]”
 + pip install tortoise-orm
-+ 
++ pip install python-jose
++ pip install passlib
++ pip install python-multipart
++ pip install aiomysql
++ pip install aerich
++ pip install bcrypt
 ### 配置orm
 + aerich init -t database.config.CONFIG # 初始化配置文件
 + aerich init-db # 初始化数据库, 一般在第一次使用时执行

@@ -7,27 +7,32 @@ class User(Model):
     hashed_password = fields.CharField(max_length=128, description="密码")
     email = fields.CharField(max_length=50, description="邮箱")
     phone = fields.CharField(max_length=50, description="电话")
-    role = fields.IntField(description="角色")
-    avatar = fields.CharField(max_length=1023, description="头像")
+    role = fields.IntField(description="角色", default=0)
+    avatar = fields.CharField(max_length=1023, description="头像", null=True)
 
 
 class MModel(Model):
     id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=50, description="模型名称")
-    style = fields.CharField(max_length=50, description="模型风格")
+    name = fields.CharField(max_length=50, description="模型名称", unique=True)
+    style = fields.CharField(
+        max_length=50, description="模型风格", default="default")
     uploaded_time = fields.DatetimeField(auto_now_add=True, description="上传时间")
-    status = fields.IntField(description="训练状态")
+    status = fields.CharField(
+        max_length=10, description="模型状态", default="未知")
     description = fields.TextField(description="描述")
+    model_file = fields.BinaryField(description="模型文件")
+    md5 = fields.CharField(max_length=32, description="md5值", unique=True)
 
 
 class Component(Model):
     id = fields.IntField(pk=True)
     name = fields.CharField(max_length=50, description="组件名称")
-    status = fields.IntField(description="组件状态")
-    life_forecast = fields.IntField(description="寿命预测")
+    status = fields.IntField(description="组件状态", null=True)
+    life_forecast = fields.IntField(description="寿命预测", default=-1)
     location = fields.CharField(max_length=50, description="位置")
     updated_time = fields.DatetimeField(auto_now_add=True, description="更新时间")
+    pic = fields.BinaryField(description="图片", null=True)
     model = fields.ForeignKeyField(
-        'models.MModel', related_name='components', description="模型")
+        'models.MModel', related_name='components', description="模型", null=True)
     user = fields.ForeignKeyField(
         'models.User', related_name='components', description="用户")
