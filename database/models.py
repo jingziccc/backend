@@ -20,7 +20,7 @@ class MModel(Model):
     status = fields.CharField(
         max_length=10, description="模型状态", default="未知")
     description = fields.TextField(description="描述")
-    model_file = fields.BinaryField(description="模型文件")
+    modelfile = fields.BinaryField(description="模型文件")
     md5 = fields.CharField(max_length=32, description="md5值", unique=True)
 
 
