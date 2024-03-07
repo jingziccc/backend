@@ -55,58 +55,6 @@ app.add_middleware(
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
-
-
-@app.post("/predict")
-async def predict(item: Item):
-    return {"data": item.data + " accept"}
-
-
-
-
-@app.get("/predict/all", tags=["数据中心"])
-async def predict_all():
-    # 遍历uoloaded_files目录下的所有xlsx文件
-    result: CompletedProcess
-    for file in Path("./uploaded_files").iterdir():
-        if file.is_file() and file.suffix == ".xlsx":
-            # 如果寿命不为-1，则执行命令
-            parts = file.stem.split("_")
-            if parts[4] != "-1":
-                continue
-            command = ["python", "./algorithm/random_life.py",
-                       "./uploaded_files/" + file.name]
-            # 执行命令
-            result = subprocess.run(command, capture_output=True, text=True)
-            if result.returncode == 0:
-                print(result.stdout)
-                life = int(result.stdout)
-                # 重命名文件
-                # 解除占用
-                # rename_file(file, life)
-            else:
-                return HTTPException(status_code=500, detail=result.stderr)
-    return {"info": "Predicted all files.", "result": "success"}
-
-
-
-
-@app.get("/OverviewData")
-async def read_chart_data():
-    with open("myChart_data.txt", "r") as file:
-        data = json.load(file)
-        print(data)
-    return data
-
-
-
-@app.get("/OverviewData/pie2_data.txt")
-async def read_pie1_data():
-    with open("OverviewData/pie2_data.txt", "r") as file:
-        data = json.load(file)
-        return [PieData(**item) for item in data]
-
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app="main:app", host="localhost", port=8000, reload=True)

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Form, UploadFile, Depends, HTTPException
 from database.models import MModel, User, Component
 from tools.security import get_current_user
 from typing import Union
+from common.CommonResponse import CommonResponse
 
 componentAPI = APIRouter()
 
@@ -16,7 +17,7 @@ async def upload_component(
 ):
     # 检查组件名是否重复
     if await Component.exists(name=name, user=current_user):
-        raise HTTPException(status_code=400, detail="组件名已存在")
+        return CommonResponse.error(110, "组件名已存在")
 
     if model is None:
         component = await Component.create(
@@ -28,7 +29,7 @@ async def upload_component(
     else:
         model = await MModel.get(id=model)
         if not model:
-            raise HTTPException(status_code=400, detail="模型不存在")
+            return CommonResponse.error(103, "模型不存在")
         component = await Component.create(
             name=name,
             location=location,
