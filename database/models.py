@@ -36,3 +36,15 @@ class Component(Model):
         'models.MModel', related_name='components', description="模型", null=True)
     user = fields.ForeignKeyField(
         'models.User', related_name='components', description="用户")
+    # 与data的一对多关系
+    data: fields.ReverseRelation['DData']
+
+
+class DData(Model):
+    id = fields.IntField(pk=True)
+    file = fields.BinaryField(description="数据文件")
+    name = fields.CharField(max_length=50, description="数据名称", null=True)
+    time = fields.DatetimeField(auto_now_add=True, description="上传时间")
+    result = fields.TextField(description="结果", null=True)
+    component = fields.ForeignKeyField(
+        'models.Component', related_name='data', description="组件")

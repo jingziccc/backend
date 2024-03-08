@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, UploadFile, Depends, HTTPException
+from fastapi import APIRouter, Form, UploadFile, Depends, HTTPException, Response
 from database.models import MModel, User, Component
 from tools.security import get_current_user
 from typing import Union
@@ -44,7 +44,12 @@ async def upload_component(
 
 @componentAPI.get("/all_user")
 async def read_user_components(current_user: User = Depends(get_current_user)):
-    return await Component.filter(user=current_user)
+    components = await Component.filter(user=current_user)
+    # 将模型文件置空
+    for c in components:
+        c.model = ''
+        c.pic = ''
+    return components
 
 
 @componentAPI.get("/model_count", description="返回当前用户下各模型的组件数量", tags=["charts"])
@@ -69,3 +74,12 @@ async def read_location_count(current_user: User = Depends(get_current_user)):
         else:
             location_count[c.location] = 1
     return location_count
+
+
+@componentAPI.get("/pic/{id}")
+async def read_component_pic(id: int, current_user: User = Depends(get_current_user)):
+    component = await Component.get(id=id).prefetch_related('user')
+    component_user = component.user
+    if component.user != current_user:
+        return CommonResponse.error(124, "无权访问其它用户的组件信息")
+    return Response(content=component.pic, media_type="image/png")

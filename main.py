@@ -19,6 +19,7 @@ from tools.security import get_current_user
 from api.user import userAPI
 from api.mmodel import modelAPI
 from api.component import componentAPI
+from api.data import dataAPI
 
 uploaded_files_md5s = {}
 
@@ -40,6 +41,7 @@ register_tortoise(app=app,
 app.include_router(userAPI, prefix="/user", tags=["用户相关API"])
 app.include_router(modelAPI, prefix="/model", tags=["模型相关API"])
 app.include_router(componentAPI, prefix="/component", tags=["组件相关API"])
+app.include_router(dataAPI, prefix="/data", tags=["数据相关API"])
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
