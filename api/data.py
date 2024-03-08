@@ -3,11 +3,25 @@ from common.CommonResponse import CommonResponse
 from tools.security import get_current_user
 from fastapi import APIRouter
 from database.models import DData, Component
+from common.CommonResponse import CommonResponse
 dataAPI = APIRouter()
 
 
 @dataAPI.post("/", description="上传数据")
-async def create_data(file: UploadFile = Form(...), name: str = Form(...), component: int = Form(...), current_user=Depends(get_current_user)):
+async def create_data(file: UploadFile, name: str = Form(...), component: int = Form(...), current_user=Depends(get_current_user)):
+    """
+    上传用户的指定组件的数据至数据库
+
+    Args:
+    - file: 上传的文件
+    - name: 数据名称
+    - component: 组件id
+    - current_user: 当前用户, 由Depends(get_current_user)注入, 即需要在请求头中携带token
+
+    Returns:
+    - 成功: 返回数据id
+    - 失败: 返回错误信息
+    """
     component = await Component.get(id=component).prefetch_related('user')
     if not component:
         return CommonResponse.error(104, "组件不存在")
@@ -18,10 +32,10 @@ async def create_data(file: UploadFile = Form(...), name: str = Form(...), compo
         name=name,
         component=component
     )
-    return data
+    return CommonResponse.success(data.id)
 
 
-@dataAPI.get("/user_component/{id}", description="返回当前用户下的某个组件的数据")
+@dataAPI.get("/user_component/{id}", description="返回当前用户下的某个组件的数据", response_model_exclude={"file"})
 async def read_user_component_data(id: int, current_user=Depends(get_current_user)):
     component = await Component.get(id=id).prefetch_related('user')
     if not component:
