@@ -1,1 +1,6 @@
 /uploaded_files/*
+/database/__pycache__/*
+/api/__pycache__/*
+/common/__pycache__/*
+/model_files/*
+/tools/__pycache__/*
