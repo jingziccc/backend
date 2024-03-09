@@ -3,7 +3,7 @@ from typing import Union
 from passlib.context import CryptContext
 from typing import Union
 from database.models import User
-from jose import JWTError, jwt
+from jose import ExpiredSignatureError, JWTError, jwt
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from fastapi import Depends, HTTPException, status
@@ -66,21 +66,45 @@ async def create_access_token(data: dict, expires_delta: Union[timedelta, None] 
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException
-    {
-        "detail": "Could not validate credentials",
-        "headers": {"WWW-Authenticate": "Bearer"},
-        "status_code": status.HTTP_401_UNAUTHORIZED
-    }
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
-            raise credentials_exception
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials"
+            )
         token_data = TokenData(username=username)
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token已过期，请重新登录"
+        )
     except JWTError:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials"
+        )
     user = await User.get(username=token_data.username)
     if user is None:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
     return user
+
+
+async def is_expired(token: str) -> str:
+    try:
+        new_token = None
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[
+                             ALGORITHM], options={"verify_exp": False})
+        exp = payload.get("exp")
+        username = payload.get("sub")
+        if exp is not None:
+            # 如果过期时间是前一分钟, 则产生新的token
+            if exp - datetime.now(timezone.utc) < timedelta(minutes=1):
+                new_token = await create_access_token(data={"sub": username})
+        return new_token
+    except Exception as e:
+        return None

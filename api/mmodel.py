@@ -48,7 +48,7 @@ async def style():
             style_dict[s] = 1
     for k in style_dict:
         style_dict[k] /= total
-    return style_dict
+    return CommonResponse.success(style_dict)
 
 
 @modelAPI.get("/status", description="获取各模型状态占百分比", tags=["charts"])

@@ -1,7 +1,6 @@
 from tortoise.models import Model
 from tortoise import fields
 
-
 class User(Model):
     username = fields.CharField(pk=True, max_length=50, description="用户名")
     hashed_password = fields.CharField(max_length=128, description="密码")

@@ -1,16 +1,15 @@
 import subprocess
-from fastapi import FastAPI, File, Form, HTTPException, status, Depends
+from fastapi import FastAPI, File, Form, Request, status, Depends
+from jose import ExpiredSignatureError
 from common.CommonResponse import CommonResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from pathlib import Path
-from subprocess import CompletedProcess
 from tortoise.contrib.fastapi import register_tortoise
 from database.config import CONFIG
 
 from database.models import User
-from tools.security import get_current_user
+from tools.security import get_current_user, is_expired
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.user import userAPI
@@ -40,7 +39,21 @@ app.include_router(modelAPI, prefix="/model", tags=["模型相关API"])
 app.include_router(componentAPI, prefix="/component", tags=["组件相关API"])
 app.include_router(dataAPI, prefix="/data", tags=["数据相关API"])
 
-# 定义全局异常处理函数
+
+@app.middleware("http")
+async def token_expired_generate(request: Request, call_next):
+    # 如果token过期, 产生新的token
+    bearer_token = request.headers.get("Authorization")
+    response = await call_next(request)
+    if bearer_token:
+        token = bearer_token.split(" ")[1]
+        new_token = is_expired(token)
+        if new_token:
+            response.set_cookie("Authorization", new_token)
+            return response
+    return response
+
+
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -48,11 +61,6 @@ async def http_exception_handler(request, exc):
     # 处理 HTTPException 异常
     return CommonResponse.error(exc.status_code, exc.detail)
 
-
-@app.exception_handler(Exception)
-async def validation_exception_handler(request, exc):
-    # 处理请求参数验证错误
-    return CommonResponse.error(400, exc.errors())
 
 
 app.add_middleware(
