@@ -39,7 +39,7 @@ async def upload_component(
         )
     component.model = ''
     component.pic = ''
-    return component
+    return CommonResponse.success(component)
 
 
 @componentAPI.get("/all_user")
@@ -49,7 +49,7 @@ async def read_user_components(current_user: User = Depends(get_current_user)):
     for c in components:
         c.model = ''
         c.pic = ''
-    return components
+    return CommonResponse.success(components)
 
 
 @componentAPI.get("/model_count", description="返回当前用户下各模型的组件数量", tags=["charts"])
@@ -61,7 +61,7 @@ async def read_model_count(current_user: User = Depends(get_current_user)):
             model_count[c.name] += 1
         else:
             model_count[c.name] = 1
-    return model_count
+    return CommonResponse.success(model_count)
 
 
 @componentAPI.get("/location_count", description="返回当前用户下各位置的组件数量", tags=["charts"])
@@ -73,7 +73,7 @@ async def read_location_count(current_user: User = Depends(get_current_user)):
             location_count[c.location] += 1
         else:
             location_count[c.location] = 1
-    return location_count
+    return CommonResponse.success(location_count)
 
 
 @componentAPI.get("/pic/{id}")

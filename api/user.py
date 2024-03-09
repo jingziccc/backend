@@ -21,7 +21,7 @@ async def login_token(form_data: OAuth2PasswordRequestForm = Depends()) -> Token
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return Token(access_token=await create_access_token(data={"sub": user.username}), token_type="bearer")
+    return Token(access_token=await create_access_token(data={"sub": user.username}), token_type="Bearer")
 
 
 @userAPI.post("/register")
@@ -30,7 +30,7 @@ async def register(username: str = Form(), password: str = Form(), email: str = 
         return CommonResponse.error(120, "用户名已存在")
     hashed_password = get_password_hash(password)
     user = await User.create(username=username, hashed_password=hashed_password, email=email, phone=phone, role=role, avatar=avatar)
-    return Token(access_token=await create_access_token(data={"sub": user.username}), token_type="bearer")
+    return CommonResponse.success(Token(access_token=await create_access_token(data={"sub": user.username}), token_type="Bearer").to_json())
 
 
 @userAPI.post("/login")
@@ -42,4 +42,4 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return Token(access_token=await create_access_token(data={"sub": user.username}), token_type="bearer")
+    return CommonResponse.success(Token(access_token=await create_access_token(data={"sub": user.username}), token_type="Bearer").to_json())

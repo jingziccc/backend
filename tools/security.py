@@ -19,8 +19,14 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-    def __str__(self):
-        return f"access_token: {self.access_token}, token_type: {self.token_type}"
+    def to_json(self):
+        return {
+            "token": self.access_token,
+            "type": self.token_type
+        }
+
+    def to_str(self):
+        return f"token: {self.access_token}, type: {self.token_type}"
 
 class TokenData(BaseModel):
     username: Union[str, None] = None
