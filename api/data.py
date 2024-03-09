@@ -4,6 +4,7 @@ from tools.security import get_current_user
 from fastapi import APIRouter
 from database.models import DData, Component
 from common.CommonResponse import CommonResponse
+from tortoise.exceptions import DoesNotExist
 dataAPI = APIRouter()
 
 
@@ -22,7 +23,10 @@ async def create_data(file: UploadFile, name: str = Form(...), component: int = 
     - 成功: 返回数据id
     - 失败: 返回错误信息
     """
-    component = await Component.get(id=component).prefetch_related('user')
+    try:
+        component = await Component.get(id=component).prefetch_related('user')
+    except DoesNotExist:
+        return CommonResponse.error(104, "组件不存在")
     if not component:
         return CommonResponse.error(104, "组件不存在")
     if component.user != current_user:
@@ -56,3 +60,9 @@ async def download_data(id: int, current_user=Depends(get_current_user)):
     if data.component.user != current_user:
         return CommonResponse.error(125, "无权下载其它用户的数据")
     return Response(content=data.file, media_type="application/octet-stream", headers={"Content-Disposition": f"attachment; filename={data.name}"})
+
+
+@dataAPI.get("/all_user", description="返回当前用户下的所有数据", response_model_exclude={"file"})
+async def read_user_data(current_user=Depends(get_current_user)):
+    datas = await DData.filter(component__user=current_user).prefetch_related('component')
+    return CommonResponse.success(datas)

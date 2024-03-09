@@ -63,7 +63,27 @@ class Myncoder(JSONR):
                 "updated_time": o.updated_time.strftime('%Y-%m-%d %H:%M:%S'),
                 "model": o.model.name if o.model else None
             }
+        if isinstance(o, DData):
+            return {
+                "id": o.id,
+                "name": o.name,
+                "time": o.time,
+                "result": o.result,
+                "component_name": o.component.name if isinstance(o.component, Component) else None,
+                "component_id": o.component.id if isinstance(o.component, Component) else None
+            }
+        if isinstance(o, MModel):
+            return {
+                "id": o.id,
+                "name": o.name,
+                "style": o.style,
+                "uploaded_time": o.uploaded_time.strftime('%Y-%m-%d %H:%M:%S'),
+                "status": o.status,
+                "description": o.description
+            }
         if isinstance(o, datetime.datetime):
+            # 转化成东八区时间
+            o = o + datetime.timedelta(hours=8)
             return o.strftime('%Y-%m-%d %H:%M:%S')
         if isinstance(o, list):
             return [self.default(i) for i in o]
