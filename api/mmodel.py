@@ -10,7 +10,9 @@ modelAPI = APIRouter()
 
 @modelAPI.get("/all")
 async def read_models():
-    return await MModel.all()
+    models = await MModel.all().values('id', 'name', 'style', 'status', 'description', 'uploaded_time', 'md5')
+    # 这里使用values过滤掉了modelfile字段, 可以加快查询速度
+    return CommonResponse.success(models)
 
 
 @modelAPI.post("/", response_model_exclude={"modelfile"})
@@ -32,8 +34,7 @@ async def create_model(modelfile: UploadFile, name: str = Form(), style: str = F
         os.makedirs("./model_files")
     with open(f"./model_files/{md5}", "wb") as f:
         f.write(file_content)
-    model.modelfile = ''
-    return model
+    return CommonResponse.success(model)
 
 
 @modelAPI.get("/style", description="获取各模型风格占百分比", tags=["charts"])
@@ -63,7 +64,7 @@ async def status():
             status_dict[s] = 1
     for k in status_dict:
         status_dict[k] /= total
-    return status_dict
+    return CommonResponse.success(status_dict)
 
 # 获取指定id的模型
 
@@ -71,11 +72,25 @@ async def status():
 @modelAPI.get("/{id}")
 async def read_model(id: int):
     model = await MModel.get(id=id)
-    # 下载模型文件到d盘
-    if not os.path.exists("D:/model_files"):
+    # 判断模型文件是否存在于目录
+    if not os.path.exists("./model_files"):
         os.makedirs("D:/model_files")
-    with open(f"D:/model_files/{model.md5}", "wb") as f:
-        f.write(model.modelfile)
+    if not os.path.exists(f"./model_files/{model.md5}"):
+        with open(f"./model_files/{model.md5}", "wb") as f:
+            f.write(model.modelfile)
+
     if not model:
         return CommonResponse.error(103, "模型不存在")
-    return model
+    return CommonResponse.success(model)
+
+
+@modelAPI.delete("/{id}")
+async def delete_model(id: int, user: User = Depends(get_current_user)):
+    model = await MModel.get(id=id).prefetch_related('user').values('id', 'user__username')
+    if model['user__username'] is not None:
+        if model['user__username'] != user.username:
+            return CommonResponse.error(123, "无权删除其它用户的模型")
+    deleted_count = await MModel.filter(id=id).delete()
+    if deleted_count == 0:
+        return CommonResponse.error(500, "删除失败")
+    return CommonResponse.success("删除成功!")

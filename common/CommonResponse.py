@@ -79,7 +79,9 @@ class Myncoder(JSONR):
                 "style": o.style,
                 "uploaded_time": o.uploaded_time.strftime('%Y-%m-%d %H:%M:%S'),
                 "status": o.status,
-                "description": o.description
+                "description": o.description,
+                "md5": o.md5,
+                "user": o.user.username if o.user else None
             }
         if isinstance(o, datetime.datetime):
             # 转化成东八区时间

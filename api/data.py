@@ -64,5 +64,16 @@ async def download_data(id: int, current_user=Depends(get_current_user)):
 
 @dataAPI.get("/all_user", description="返回当前用户下的所有数据", response_model_exclude={"file"})
 async def read_user_data(current_user=Depends(get_current_user)):
-    datas = await DData.filter(component__user=current_user).prefetch_related('component')
+    datas = await DData.filter(component__user=current_user).prefetch_related('component').values('id', 'name', 'time', 'result', 'component_id', 'component__name')
     return CommonResponse.success(datas)
+
+
+@dataAPI.delete("/{id}", description="删除数据")
+async def delete_data(id: int, current_user=Depends(get_current_user)):
+    data = await DData.get(id=id).prefetch_related('component__user').values('id', 'component__user__username')
+    if data['component__user__username'] != current_user.username:
+        return CommonResponse.error(125, "无权删除其它用户的数据")
+    delete_count = await DData.filter(id=id).delete()
+    if delete_count == 0:
+        return CommonResponse.error(500, "删除失败")
+    return CommonResponse.success("删除成功")

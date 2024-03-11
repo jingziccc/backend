@@ -4,7 +4,7 @@ from jose import ExpiredSignatureError
 from common.CommonResponse import CommonResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
+from tortoise.exceptions import DoesNotExist
 from tortoise.contrib.fastapi import register_tortoise
 from database.config import CONFIG
 
@@ -62,6 +62,9 @@ async def http_exception_handler(request, exc):
     return CommonResponse.error(exc.status_code, exc.detail)
 
 
+@app.exception_handler(DoesNotExist)
+async def does_not_exist_exception_handler(request, exc):
+    return CommonResponse.error(404, "资源不存在")
 
 app.add_middleware(
     CORSMiddleware,

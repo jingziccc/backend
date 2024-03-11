@@ -8,6 +8,8 @@ class User(Model):
     phone = fields.CharField(max_length=50, description="电话")
     role = fields.IntField(description="角色", default=0)
     avatar = fields.CharField(max_length=1023, description="头像", null=True)
+    # 与model的一对多关系
+    models: fields.ReverseRelation['MModel']
 
 
 class MModel(Model):
@@ -21,6 +23,8 @@ class MModel(Model):
     description = fields.TextField(description="描述")
     modelfile = fields.BinaryField(description="模型文件")
     md5 = fields.CharField(max_length=32, description="md5值", unique=True)
+    user = fields.ForeignKeyField(
+        'models.User', related_name='models', description="用户", null=True)
 
 
 class Component(Model):
