@@ -14,3 +14,4 @@ api/__pycache__/data.cpython-311.pyc
 .DS_Store
 **/__pycache__
 **/*.pyc
+*/__pycache__
