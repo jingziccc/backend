@@ -13,6 +13,7 @@ async def upload_component(
     name: str = Form(...),
     location: str = Form(...),
     model: Union[int, None] = Form(...),
+    description: Union[str, None] = Form(...),
     current_user: User = Depends(get_current_user)
 ):
     # 检查组件名是否重复
@@ -35,7 +36,8 @@ async def upload_component(
             location=location,
             model=model,
             user=current_user,
-            pic=await pic.read()
+            pic=await pic.read(),
+            description=description
         )
     component.model = ''
     component.pic = ''

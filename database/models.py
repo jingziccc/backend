@@ -39,6 +39,7 @@ class Component(Model):
         'models.MModel', related_name='components', description="模型", null=True)
     user = fields.ForeignKeyField(
         'models.User', related_name='components', description="用户")
+    description = fields.TextField(description="描述", null=True)
     # 与data的一对多关系
     data: fields.ReverseRelation['DData']
 
