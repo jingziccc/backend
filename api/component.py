@@ -85,3 +85,13 @@ async def read_component_pic(id: int, current_user: User = Depends(get_current_u
     if component.user != current_user:
         return CommonResponse.error(124, "无权访问其它用户的组件信息")
     return Response(content=component.pic, media_type="image/png")
+
+
+@componentAPI.delete("/delete/{id}")
+async def delete_component(id: int, current_user: User = Depends(get_current_user)):
+    component = await Component.get(id=id).prefetch_related('user')
+    component_user = component.user
+    if component.user != current_user:
+        return CommonResponse.error(124, "无权删除其它用户的组件信息")
+    await component.delete()
+    return CommonResponse.success("删除成功")
