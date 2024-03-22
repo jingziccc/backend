@@ -46,11 +46,7 @@ async def upload_component(
 
 @componentAPI.get("/all_user")
 async def read_user_components(current_user: User = Depends(get_current_user)):
-    components = await Component.filter(user=current_user)
-    # 将模型文件置空
-    for c in components:
-        c.model = ''
-        c.pic = ''
+    components = await Component.filter(user=current_user).prefetch_related('model').values('id','name','location','updated_time','model__name','model__id','life_forecast','status')
     return CommonResponse.success(components)
 
 

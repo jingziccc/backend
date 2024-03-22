@@ -61,7 +61,8 @@ class Myncoder(JSONR):
                 "life_forecast": o.life_forecast,
                 "location": o.location,
                 "updated_time": o.updated_time.strftime('%Y-%m-%d %H:%M:%S'),
-                "model": o.model.name if o.model else None
+                "model_name": o.model.name if isinstance(o.model, MModel) else None,
+                "model_id": o.model.id if isinstance(o.model, MModel) else None,
             }
         if isinstance(o, DData):
             return {
