@@ -16,18 +16,19 @@ async def read_models():
 
 
 @modelAPI.post("/", response_model_exclude={"modelfile"})
-async def create_model(modelfile: UploadFile, name: str = Form(), style: str = Form(), status: str = Form(), description: str = Form(), _: User = Depends(get_current_user)):
+async def create_model(file: UploadFile, name: str = Form(...), style: str = Form(...), 
+                       status: str = Form(...), description: str = Form(...), user: User = Depends(get_current_user)):
     # 检查是否是合法的模型文件
     # TODO
 
     # 检查模型名是否重复
-    file_content = await modelfile.read()
+    file_content = await file.read()
     if await MModel.exists(name=name):
         return CommonResponse.error(100, "模型名已存在")
     md5 = await get_file_md5(file_content)
     if await MModel.exists(md5=md5):
         return CommonResponse.error(101, "模型文件已存在")
-    model = await MModel.create(name=name, style=style, status=status, description=description, modelfile=file_content, md5=md5)
+    model = await MModel.create(name=name, style=style, status=status, description=description, modelfile=file_content, md5=md5,user=user)
     # 将模型文件存储到本地
     # 如果目录不存在则创建
     if not os.path.exists("./model_files"):

@@ -1,0 +1,29 @@
+name: Deploy FastAPI Application
+
+on:
+  push:
+    branches:
+      - main  # 或你用于部署的分支
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    - name: Deploy to Server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.REMOTEHOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.TOKEN }}
+        script: |
+          cd /path/to/your/app
+          git pull
+          # 任何其他部署命令，例如重启你的 FastAPI 应用
