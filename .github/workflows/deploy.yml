@@ -31,7 +31,7 @@ jobs:
     # 在远程服务器上安装依赖
     - name: Install dependencies on server
       run: |
-        ssh -o StrictHostKeyChecking=no -A root@${{ secrets.REMOTEHOST }} "cd /fastapi/tzb/ &&conda activate tzbpy311 && pip3 install -r requirements.txt"
+        ssh -o StrictHostKeyChecking=no -A root@${{ secrets.REMOTEHOST }} "cd /fastapi/tzb/ &&conda activate tzbpy311 && pip install -r requirements.txt"
     # 启动 FastAPI 服务
     - name: Start FastAPI server
       run: |
