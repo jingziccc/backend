@@ -39,4 +39,4 @@ jobs:
     # 启动 FastAPI 服务
     - name: Start FastAPI server
       run: |
-        ssh -o StrictHostKeyChecking=no -A root@${{ secrets.REMOTEHOST }} "cd /fastapi/tzb/ && conda activate tzbpy311 && nohup gunicorn main:app --workers 5 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8080"
+        ssh -o StrictHostKeyChecking=no -A root@${{ secrets.REMOTEHOST }} "cd /fastapi/tzb/ && conda activate tzbpy311 && nohup gunicorn main:app --reload --workers 5 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8080"
