@@ -14,14 +14,16 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.11'
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
     # 连接到远程服务器
     - name: Connetct to Server
       uses: webfactory/ssh-agent@v0.4.1
       with:
         ssh-private-key: ${{ secrets.TOKEN }}
+    - name: Add SSH key of the remote server
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.REMOTE_SERVER_SSH_KEY }}" >> ~/.ssh/known_hosts
+        echo "${{ secrets.REMOTE_SERVER_SSH_KEY }}" >> /root/.ssh/known_hosts
     # 将代码推送到远程服务器
     - name: Push code to server
       run: |
