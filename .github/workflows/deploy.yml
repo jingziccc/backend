@@ -23,6 +23,8 @@ jobs:
       run: |
         ssh-keyscan ${{ secrets.REMOTEHOST }} >> ~/.ssh/known_hosts
     # 将代码推送到远程服务器
+    - name: Create directory structure on server
+      run: ssh root@${{ secrets.REMOTEHOST }} "mkdir -p /fastapi/tzb"
     - name: Push code to server
       run: |
         rsync -avz --delete --exclude '.git' --exclude '.github' . root@${{ secrets.REMOTEHOST }}:/fastapi/tzb/
