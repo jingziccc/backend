@@ -1,5 +1,5 @@
 fastapi
-"uvicorn[standard]”
+uvicorn[standard]
 tortoise-orm
 python-jose
 passlib
