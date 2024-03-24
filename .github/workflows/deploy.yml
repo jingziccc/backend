@@ -22,3 +22,11 @@ jobs:
       uses: webfactory/ssh-agent@v0.4.1
       with:
         ssh-private-key: ${{ secrets.TOKEN }}
+    # 将代码推送到远程服务器
+    - name: Push code to server
+      run: |
+        rsync -avz --delete --exclude '.git' --exclude '.github' . root@${{ secrets.REMOTEHOST }}:/fastapi/tzb/
+    # 在远程服务器上安装依赖
+    - name: Install dependencies on server
+      run: |
+        ssh -o StrictHostKeyChecking=no -A root@${{ secrets.REMOTEHOST }} "cd /fastapi/tzb/ && pip install -r requirements.txt"
