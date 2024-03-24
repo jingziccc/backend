@@ -31,4 +31,8 @@ jobs:
     # 在远程服务器上安装依赖
     - name: Install dependencies on server
       run: |
-        ssh -o StrictHostKeyChecking=no -A root@${{ secrets.REMOTEHOST }} "cd /fastapi/tzb/ && pip install -r requirements.txt"
+        ssh -o StrictHostKeyChecking=no -A root@${{ secrets.REMOTEHOST }} "cd /fastapi/tzb/ && pip3 install -r requirements.txt"
+    # 启动 FastAPI 服务
+    - name: Start FastAPI server
+      run: |
+        ssh -o StrictHostKeyChecking=no -A root@${{ secrets.REMOTEHOST }} "cd /fastapi/tzb/ && nohup gunicorn main:app --workers 5 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8080
