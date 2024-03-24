@@ -19,10 +19,8 @@ jobs:
         pip install -r requirements.txt
     # 连接到远程服务器
     - name: Connetct to Server
-      uses: appleboy/ssh-action@master
+      uses: webfactory/ssh-agent@v0.4.1
       with:
-        host: ${{ secrets.REMOTEHOST }}
-        username: root
-        secret: ${{ secrets.SECRET }}
+        ssh-private-key: ${{ secrets.TOKEN }}
         script: |
           echo "Connected to Server"
