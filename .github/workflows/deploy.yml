@@ -21,7 +21,7 @@ jobs:
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.REMOTEHOST }}
-        username: ${{ secrets.USERNAME }}
+        username: root
         key: ${{ secrets.TOKEN }}
         script: |
           cd /path/to/your/app
