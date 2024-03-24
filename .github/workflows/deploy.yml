@@ -31,7 +31,8 @@ jobs:
     # 结束远程服务器上的 FastAPI 服务
     - name: Stop FastAPI server
       run: |
-        ssh -o StrictHostKeyChecking=no -A root@${{ secrets.REMOTEHOST }} "pkill -f 'gunicorn main:app'"
+        ssh -o StrictHostKeyChecking=no -A root@${{ secrets.REMOTEHOST }} "cd /fastapi/tzb/ && chmod +x kill_port.sh && ./kill_port.sh"
+        "
     # 在远程服务器上安装依赖
     - name: Install dependencies on server
       run: |
